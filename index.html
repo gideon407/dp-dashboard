@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Driver's Paddock · Market Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="data.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:    #0a0a0a;
+      --ink2:   #111111;
+      --ink3:   #181818;
+      --rule:   #242424;
+      --paper:  #e8e0d5;
+      --muted:  #888888;
+      --gold:   #c4a96a;
+      --gold2:  #e8d5a3;
+      --up:     #4ade80;
+      --down:   #f87171;
+      --stable: #94a3b8;
+      --high:   #ef4444;
+      --med:    #f59e0b;
+      --low:    #22c55e;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--ink);
+      color: var(--paper);
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── Topbar ── */
+    .topbar-outer {
+      position: sticky;
+      top: 0;
+      background: var(--ink);
+      border-bottom: 1px solid var(--rule);
+      z-index: 100;
+    }
+
+    #topbar {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 32px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      color: var(--gold);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    nav { display: flex; gap: 4px; }
+
+    nav a {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 4px;
+      transition: color 150ms;
+      white-space: nowrap;
+    }
+
+    nav a:hover { color: var(--paper); }
+    nav a.active { color: var(--gold); }
+
+    .updated-ts {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ── Content ── */
+    .content {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    .sections-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 64px;
+      padding: 48px 0 80px;
+    }
+
+    /* ── Section titles ── */
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--paper);
+      margin-bottom: 20px;
+    }
+
+    /* ── Controls row ── */
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .filter-btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid var(--rule);
+      background: transparent;
+      color: var(--muted);
+      transition: all 150ms;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .filter-btn:hover { color: var(--paper); border-color: var(--muted); }
+
+    .filter-btn.active {
+      background: var(--gold);
+      color: var(--ink);
+      border-color: var(--gold);
+    }
+
+    .search-input {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      background: var(--ink2);
+      border: 1px solid var(--rule);
+      color: var(--paper);
+      padding: 7px 14px;
+      border-radius: 4px;
+      width: 240px;
+      outline: none;
+      transition: border-color 150ms;
+    }
+
+    .search-input::placeholder { color: var(--muted); }
+    .search-input:focus { border-color: var(--gold); }
+
+    /* ── Trend grid ── */
+    .trend-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    /* ── Trend card ── */
+    .trend-card {
+      background: var(--ink2);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 16px;
+      transition: transform 150ms, border-color 150ms;
+      cursor: default;
+    }
+
+    .trend-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--gold);
+    }
+
+    .trend-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .trend-make {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--paper);
+    }
+
+    .trend-model {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 6px;
+    }
+
+    .trend-arrow {
+      font-size: 18px;
+      font-weight: bold;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .trend-signal {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 13px;
+      color: var(--gold2);
+      margin-bottom: 8px;
+    }
+
+    .trend-summary {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 10px;
+    }
+
+    .trend-source {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    /* ── Auction grid ── */
+    .auction-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    /* ── Auction card ── */
+    .auction-card {
+      background: var(--ink2);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 16px;
+      transition: transform 150ms, border-color 150ms;
+      cursor: default;
+    }
+
+    .auction-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--gold);
+    }
+
+    .auction-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+      gap: 12px;
+    }
+
+    .auction-car {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px;
+      color: var(--paper);
+      line-height: 1.3;
+    }
+
+    .auction-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+
+    .auction-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .auction-house-date {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .estimate-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .auction-summary {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .auction-source {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    /* ── Competitor grid ── */
+    .competitor-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    /* ── Competitor card ── */
+    .competitor-card {
+      background: var(--ink2);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 16px 16px 16px 19px;
+      position: relative;
+    }
+
+    .competitor-left-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      border-radius: 6px 0 0 6px;
+    }
+
+    .competitor-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .competitor-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--paper);
+    }
+
+    .threat-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .competitor-headline {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 13px;
+      color: var(--gold2);
+      margin-bottom: 10px;
+    }
+
+    .news-item {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 4px;
+    }
+
+    .dp-advantage {
+      font-size: 12px;
+      color: var(--low);
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    /* ── Feature matrix ── */
+    .matrix-wrap { overflow-x: auto; }
+
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .matrix-table th {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      padding: 10px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .matrix-table td {
+      padding: 10px 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .matrix-table td:first-child {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: var(--paper);
+    }
+
+    .matrix-table th.dp-col,
+    .matrix-table td.dp-col { background: var(--ink3); }
+
+    .matrix-table tr:nth-child(odd) td:not(.dp-col)  { background: var(--ink2); }
+    .matrix-table tr:nth-child(even) td:not(.dp-col) { background: var(--ink3); }
+
+    .cell-check { color: var(--up);   font-weight: 600; }
+    .cell-dash  { color: var(--rule); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      padding: 40px 0;
+      border-top: 1px solid var(--rule);
+      line-height: 1.9;
+    }
+
+    /* ── Skeleton ── */
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50%       { opacity: 0.7; }
+    }
+
+    .skel-card {
+      background: var(--ink2);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 16px;
+    }
+
+    .skel-line {
+      background: var(--ink3);
+      border-radius: 3px;
+      animation: pulse 1.4s ease-in-out infinite;
+      height: 12px;
+      margin-bottom: 8px;
+    }
+
+    .skel-line.h16 { height: 16px; }
+    .skel-line.h20 { height: 20px; }
+    .skel-line.w40 { width: 40%; }
+    .skel-line.w60 { width: 60%; }
+    .skel-line.w80 { width: 80%; }
+    .skel-line.w100 { width: 100%; }
+    .skel-sq { width: 24px; height: 24px; background: var(--ink3); border-radius: 3px; animation: pulse 1.4s ease-in-out infinite; flex-shrink: 0; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1024px) {
+      .trend-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+      .competitor-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .trend-grid    { grid-template-columns: 1fr; }
+      .auction-grid  { grid-template-columns: 1fr; }
+      .content       { padding: 0 16px; }
+      #topbar        { padding: 0 16px; }
+      .controls      { flex-direction: column; align-items: flex-start; }
+      .search-input  { width: 100%; }
+      .logo          { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar-outer">
+  <div id="topbar">
+    <div class="logo">Driver's Paddock</div>
+    <nav id="main-nav">
+      <a href="#trends"      data-section="trends">Trends</a>
+      <a href="#auctions"    data-section="auctions">Auctions</a>
+      <a href="#competitors" data-section="competitors">Competitors</a>
+    </nav>
+    <div class="updated-ts" id="updated-ts">Updated: —</div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sections-wrap">
+
+    <!-- ─────────────────── Section 1: Trends ─────────────────── -->
+    <section id="trends">
+      <h2 class="section-title">📈 Collectible Trends</h2>
+      <div class="controls">
+        <div class="filter-btns" id="trend-filters">
+          <button class="filter-btn active" data-dir="all">ALL</button>
+          <button class="filter-btn" data-dir="up">UP</button>
+          <button class="filter-btn" data-dir="down">DOWN</button>
+          <button class="filter-btn" data-dir="stable">STABLE</button>
+        </div>
+        <input class="search-input" type="text" id="trend-search" placeholder="Search make, model…">
+      </div>
+      <div class="trend-grid" id="trend-grid"></div>
+    </section>
+
+    <!-- ─────────────────── Section 2: Auctions ─────────────────── -->
+    <section id="auctions">
+      <h2 class="section-title">🔨 Exotic Auctions</h2>
+      <div class="controls">
+        <div class="filter-btns" id="auction-filters">
+          <button class="filter-btn active" data-house="all">ALL</button>
+          <button class="filter-btn" data-house="BaT">BaT</button>
+          <button class="filter-btn" data-house="RM Sotheby's">RM Sotheby's</button>
+          <button class="filter-btn" data-house="Gooding">Gooding</button>
+          <button class="filter-btn" data-house="Barrett-Jackson">Barrett-Jackson</button>
+          <button class="filter-btn" data-house="Cars & Bids">Cars & Bids</button>
+          <button class="filter-btn" data-house="Bonhams">Bonhams</button>
+        </div>
+      </div>
+      <div class="auction-grid" id="auction-grid"></div>
+    </section>
+
+    <!-- ─────────────────── Section 3: Competitors ─────────────────── -->
+    <section id="competitors">
+      <h2 class="section-title">🕵️ Competitor Intel</h2>
+      <div class="competitor-grid" id="competitor-grid"></div>
+      <div class="matrix-wrap">
+        <table class="matrix-table" id="matrix-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th class="dp-col">Driver's Paddock</th>
+              <th>MyCollection</th>
+              <th>Hagerty</th>
+              <th>Carfax</th>
+            </tr>
+          </thead>
+          <tbody id="matrix-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<footer id="site-footer">
+  Driver's Paddock Market Intelligence · Refreshed every Friday 09:00 EST<br>
+  Last updated: <span id="footer-ts">—</span> · Powered by Claude · Run Up Holdings
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var MD = window.MARKET_DATA;
+
+  if (!MD) {
+    console.warn('data.js not loaded — run: node research-agent.js on the VPS');
+  }
+
+  // ── Timestamps ──────────────────────────────────────────────
+  var ts = (MD && MD.lastUpdatedReadable) ? MD.lastUpdatedReadable : 'Not yet generated';
+  document.getElementById('updated-ts').textContent = 'Updated: ' + ts;
+  document.getElementById('footer-ts').textContent = ts;
+
+  // ── Colour helpers ──────────────────────────────────────────
+  function dirColor(d) {
+    return d === 'up' ? 'var(--up)' : d === 'down' ? 'var(--down)' : 'var(--stable)';
+  }
+  function dirArrow(d) {
+    return d === 'up' ? '↑' : d === 'down' ? '↓' : '→';
+  }
+  function threatColor(t) {
+    return t === 'high' ? 'var(--high)' : t === 'medium' ? 'var(--med)' : 'var(--low)';
+  }
+  function estimateColor(r) {
+    if (r === 'above')  return 'var(--up)';
+    if (r === 'below')  return 'var(--down)';
+    return 'var(--stable)';
+  }
+  // hex to rgba-20% for badge backgrounds using inline hex33
+  function bgAlpha(cssVar) {
+    // Approximate: returns a style string using the variable with 20% opacity trick
+    // We inline the hex directly based on the variable name
+    var map = {
+      'var(--up)':     '#4ade8033',
+      'var(--down)':   '#f8717133',
+      'var(--stable)': '#94a3b833',
+      'var(--high)':   '#ef444433',
+      'var(--med)':    '#f59e0b33',
+      'var(--low)':    '#22c55e33',
+    };
+    return map[cssVar] || '#88888833';
+  }
+
+  // ── Skeleton cards ──────────────────────────────────────────
+  function makeSkelTrend() {
+    return '<div class="skel-card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+        '<div class="skel-line h16 w60"></div>' +
+        '<div class="skel-sq"></div>' +
+      '</div>' +
+      '<div class="skel-line w80" style="margin-bottom:10px"></div>' +
+      '<div class="skel-line w100"></div>' +
+      '<div class="skel-line w100"></div>' +
+      '<div class="skel-line w40" style="margin-top:10px"></div>' +
+    '</div>';
+  }
+  function makeSkelAuction() {
+    return '<div class="skel-card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+        '<div class="skel-line h20 w60"></div>' +
+        '<div class="skel-line h20" style="width:100px;animation:pulse 1.4s ease-in-out infinite;background:var(--ink3);border-radius:3px"></div>' +
+      '</div>' +
+      '<div class="skel-line w40" style="margin-bottom:10px"></div>' +
+      '<div class="skel-line w100"></div>' +
+      '<div class="skel-line w80"></div>' +
+    '</div>';
+  }
+  function makeSkelCompetitor() {
+    return '<div class="skel-card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+        '<div class="skel-line h16 w40"></div>' +
+        '<div class="skel-line h16" style="width:80px;animation:pulse 1.4s ease-in-out infinite;background:var(--ink3);border-radius:3px"></div>' +
+      '</div>' +
+      '<div class="skel-line w80" style="margin-bottom:8px"></div>' +
+      '<div class="skel-line w100"></div>' +
+      '<div class="skel-line w60"></div>' +
+    '</div>';
+  }
+
+  function injectSkeletons(gridId, count, makeFn) {
+    var grid = document.getElementById(gridId);
+    var html = '';
+    for (var i = 0; i < count; i++) html += makeFn();
+    grid.innerHTML = html;
+  }
+
+  // ── SECTION 1: Trends ───────────────────────────────────────
+  var trends = (MD && MD.trends && MD.trends.trends) ? MD.trends.trends : [];
+  var trendGrid = document.getElementById('trend-grid');
+
+  if (!trends.length) {
+    injectSkeletons('trend-grid', 6, makeSkelTrend);
+  } else {
+    var trendFrag = document.createDocumentFragment();
+    trends.forEach(function (t) {
+      var card = document.createElement('div');
+      card.className = 'trend-card';
+      card.dataset.direction = (t.direction || 'stable').toLowerCase();
+      card.dataset.search = ((t.make || '') + ' ' + (t.model_segment || '') + ' ' + (t.signal || '')).toLowerCase();
+      var col = dirColor(t.direction);
+      card.innerHTML =
+        '<div class="trend-card-header">' +
+          '<div>' +
+            '<span class="trend-make">' + (t.make || '') + '</span>' +
+            '<span class="trend-model">' + (t.model_segment || '') + '</span>' +
+          '</div>' +
+          '<span class="trend-arrow" style="color:' + col + '">' + dirArrow(t.direction) + '</span>' +
+        '</div>' +
+        '<div class="trend-signal">' + (t.signal || '') + '</div>' +
+        '<div class="trend-summary">' + (t.summary || '') + '</div>' +
+        '<div class="trend-source">' + (t.source || '') + ' · ' + (t.date || '') + '</div>';
+      trendFrag.appendChild(card);
+    });
+    trendGrid.appendChild(trendFrag);
+  }
+
+  var activeDir = 'all';
+  var searchVal = '';
+
+  function applyTrendFilters() {
+    var cards = trendGrid.querySelectorAll('.trend-card');
+    cards.forEach(function (card) {
+      var dirOk    = activeDir === 'all' || card.dataset.direction === activeDir;
+      var searchOk = !searchVal || card.dataset.search.indexOf(searchVal) !== -1;
+      card.style.display = (dirOk && searchOk) ? '' : 'none';
+    });
+  }
+
+  document.getElementById('trend-filters').addEventListener('click', function (e) {
+    var btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    document.querySelectorAll('#trend-filters .filter-btn').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    activeDir = btn.dataset.dir;
+    applyTrendFilters();
+  });
+
+  document.getElementById('trend-search').addEventListener('input', function (e) {
+    searchVal = e.target.value.toLowerCase().trim();
+    applyTrendFilters();
+  });
+
+  // ── SECTION 2: Auctions ─────────────────────────────────────
+  var auctions = (MD && MD.auctions && MD.auctions.auctions) ? MD.auctions.auctions : [];
+  var auctionGrid = document.getElementById('auction-grid');
+
+  if (!auctions.length) {
+    injectSkeletons('auction-grid', 4, makeSkelAuction);
+  } else {
+    var aucFrag = document.createDocumentFragment();
+    auctions.forEach(function (a) {
+      var card = document.createElement('div');
+      card.className = 'auction-card';
+      card.dataset.house = a.house || '';
+      var ec     = estimateColor(a.result_vs_estimate);
+      var ecBg   = bgAlpha(ec);
+      var elabel = (a.result_vs_estimate || 'n/a').replace(/_/g, ' ');
+      card.innerHTML =
+        '<div class="auction-card-header">' +
+          '<div class="auction-car">'   + (a.car    || '') + '</div>' +
+          '<div class="auction-price">' + (a.result || '') + '</div>' +
+        '</div>' +
+        '<div class="auction-meta">' +
+          '<span class="auction-house-date">' + (a.house || '') + ' · ' + (a.date || '') + '</span>' +
+          '<span class="estimate-badge" style="background:' + ecBg + ';color:' + ec + '">' + elabel + '</span>' +
+        '</div>' +
+        '<div class="auction-summary">' + (a.summary || '') + '</div>' +
+        '<div class="auction-source">'  + (a.source_domain || '') + '</div>';
+      aucFrag.appendChild(card);
+    });
+    auctionGrid.appendChild(aucFrag);
+  }
+
+  var activeHouse = 'all';
+
+  document.getElementById('auction-filters').addEventListener('click', function (e) {
+    var btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    document.querySelectorAll('#auction-filters .filter-btn').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    activeHouse = btn.dataset.house;
+    auctionGrid.querySelectorAll('.auction-card').forEach(function (card) {
+      card.style.display = (activeHouse === 'all' || card.dataset.house === activeHouse) ? '' : 'none';
+    });
+  });
+
+  // ── SECTION 3: Competitors ──────────────────────────────────
+  var competitors = (MD && MD.competitors && MD.competitors.competitors) ? MD.competitors.competitors : [];
+  var compGrid = document.getElementById('competitor-grid');
+
+  if (!competitors.length) {
+    injectSkeletons('competitor-grid', 3, makeSkelCompetitor);
+  } else {
+    var compFrag = document.createDocumentFragment();
+    competitors.forEach(function (c) {
+      var card = document.createElement('div');
+      card.className = 'competitor-card';
+      var tc   = threatColor(c.threat_level);
+      var tcBg = bgAlpha(tc);
+      var newsHtml = (c.news_items || []).slice(0, 3).map(function (n) {
+        return '<div class="news-item">· ' + (n.title || '') + (n.date ? ' (' + n.date + ')' : '') + ' — ' + (n.summary || '') + '</div>';
+      }).join('');
+      card.innerHTML =
+        '<div class="competitor-left-bar" style="background:' + tc + '"></div>' +
+        '<div class="competitor-card-header">' +
+          '<span class="competitor-name">' + (c.name || '') + '</span>' +
+          '<span class="threat-badge" style="background:' + tcBg + ';color:' + tc + '">' + (c.threat_level || '') + ' threat</span>' +
+        '</div>' +
+        '<div class="competitor-headline">' + (c.recent_headline || '') + '</div>' +
+        newsHtml +
+        '<div class="dp-advantage">↳ DP advantage: ' + (c.dp_advantage || '') + '</div>';
+      compFrag.appendChild(card);
+    });
+    compGrid.appendChild(compFrag);
+  }
+
+  // ── Feature matrix ──────────────────────────────────────────
+  var fm = (MD && MD.competitors && MD.competitors.feature_matrix) ? MD.competitors.feature_matrix : [];
+  var tbody = document.getElementById('matrix-body');
+
+  if (fm.length) {
+    var matFrag = document.createDocumentFragment();
+    fm.forEach(function (row) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + (row.feature || '') + '</td>' +
+        '<td class="dp-col ' + (row.dp           ? 'cell-check' : 'cell-dash') + '">' + (row.dp           ? '✓' : '–') + '</td>' +
+        '<td class="'        + (row.mycollection ? 'cell-check' : 'cell-dash') + '">' + (row.mycollection ? '✓' : '–') + '</td>' +
+        '<td class="'        + (row.hagerty      ? 'cell-check' : 'cell-dash') + '">' + (row.hagerty      ? '✓' : '–') + '</td>' +
+        '<td class="'        + (row.carfax       ? 'cell-check' : 'cell-dash') + '">' + (row.carfax       ? '✓' : '–') + '</td>';
+      matFrag.appendChild(tr);
+    });
+    tbody.appendChild(matFrag);
+  }
+
+  // ── Nav IntersectionObserver ────────────────────────────────
+  var navLinks = document.querySelectorAll('#main-nav a');
+
+  function setActiveNav(id) {
+    navLinks.forEach(function (a) {
+      a.classList.toggle('active', a.dataset.section === id);
+    });
+  }
+
+  setActiveNav('trends');
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) setActiveNav(entry.target.id);
+    });
+  }, { rootMargin: '-40% 0px -50% 0px', threshold: 0 });
+
+  ['trends', 'auctions', 'competitors'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) observer.observe(el);
+  });
+
+})();
+</script>
+
+</body>
+</html>
